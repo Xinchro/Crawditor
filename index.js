@@ -1,6 +1,7 @@
 const lighthouse = require('lighthouse')
 const chromeLauncher = require('chrome-launcher')
 const Crawler = require('easycrawler')
+const fs = require('fs')
 
 // regex to check for a proper URL
 // starts at 2 'cuz "node index" are 0 and 1, respectively
@@ -72,6 +73,48 @@ function crawlerFinished(urls) {
   }
   console.log("Crawled URLs:", urls.crawled)
   console.log("Discovered URLs:", urls.discovered)
+  saveLastCrawl(urls)
+}
+
+/**
+  Saves crawled URLs
+
+  @param {object} urls - the urls object
+*/
+function saveLastCrawl(urls) {
+  saveJSON("lastCrawl.json", urls)
+}
+
+/**
+  Saves a JSON object to the file system
+
+  @param {string} filename - the name for the file, extension included
+  @param {object} data - the object to stringify and save
+  @param {function} callback - callback to execute on save
+*/
+function saveJSON(filename, data, callback) {
+  // check for essentials
+  if(!data || !filename) throw "No data or no filename"
+
+  // check for callback and use default if no callback exists
+  callback = callback ? callback : (err) => {
+    if(err) throw err
+    console.log(`Saved file ${filename}!`)
+  }
+
+  // check if data is object
+  if(typeof data === "object") data = JSON.stringify(data, "", 2)
+
+  // make sure it's a string we're saving
+  if(typeof data === "string") {
+    // check if output directory exists, create it if not
+    if(!fs.existsSync("./output")) fs.mkdirSync("output")
+    // write file to output
+    fs.writeFile(`./output/${filename}`, data, callback)
+  } else {
+    console.error("Unable to save data.")
+  }
+
 }
 
 // crawl given URL
