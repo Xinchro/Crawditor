@@ -71,8 +71,8 @@ function crawlerFinished(urls) {
     console.error("\nPlease check your URL exists and has links in it.")
     return
   }
-  console.log("Crawled URLs:", urls.crawled)
-  console.log("Discovered URLs:", urls.discovered)
+  // console.log("Crawled URLs:", urls.crawled)
+  // console.log("Discovered URLs:", urls.discovered)
   saveLastCrawl({...urls, timeCreated: new Date()})
 }
 
