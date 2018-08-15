@@ -10,12 +10,25 @@ if(!process.argv[2].match(/(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#
 }
 const URL = process.argv[2]
 
-console.log(`About to crawl ${URL}`)
+let depth = 1
+// 1 to 10
+if(process.argv[3] && process.argv[3].match(/\b(10|[1-9])\b/g)) {
+  depth = process.argv[3]
+}
+
+// 1 to 5
+let threads = 5
+if(process.argv[4] && process.argv[4].match(/[1-5]/g)) {
+  threads = process.argv[4]
+}
+
+console.log(`Crawling ${URL}, at a depth of ${depth
+}, with ${threads} threads.`)
 
 const crawler = new Crawler({
-    thread: 5, // how many threads at once (async)
+    thread: threads, // how many threads at once (async)
     logs: false, // debug logging
-    depth: 1, // crawl depth
+    depth: depth, // crawl depth
     headers: {}, // headers to send
     // onlyCrawl: [], // only URLs containing these strings
     // reject: [], // no URLs with these strings
