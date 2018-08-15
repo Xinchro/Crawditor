@@ -73,7 +73,7 @@ function crawlerFinished(urls) {
   }
   console.log("Crawled URLs:", urls.crawled)
   console.log("Discovered URLs:", urls.discovered)
-  saveLastCrawl(urls)
+  saveLastCrawl({...urls, timeCreated: new Date()})
 }
 
 /**
