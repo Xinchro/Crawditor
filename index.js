@@ -82,7 +82,7 @@ function crawlerFinished(urls) {
   @param {object} urls - the urls object
 */
 function saveLastCrawl(urls) {
-  saveJSON("lastCrawl.json", urls)
+  save("lastCrawl.json", urls)
 }
 
 /**
@@ -92,7 +92,7 @@ function saveLastCrawl(urls) {
   @param {object} data - the object to stringify and save
   @param {function} callback - callback to execute on save
 */
-function saveJSON(filename, data, callback) {
+function save(filename, data, callback) {
   // check for essentials
   if(!data || !filename) throw "No data or no filename"
 
@@ -117,7 +117,51 @@ function saveJSON(filename, data, callback) {
 
 }
 
+
+/**
+  Launches Chrome and Lighthouse and audits the provided url.
+
+  @param {string} url - the url to audit
+  @param {object} opts - the Lighthouse options
+  @param {object} config - the Lighthouse and Chromelauncher config
+*/
+function launchChromeAndRunLighthouse(url, opts, config = null) {
+  // run the chromelauncher
+  return chromeLauncher.launch({chromeFlags: opts.chromeFlags}).then(chrome => {
+    opts.port = chrome.port
+
+    // run lighthouse
+    return lighthouse(url, opts, config).then(results => {
+      // saves the report to a nice HTML file
+      save("audit.html", results.report)
+      return chrome.kill().then(() => results.lhr)
+    })
+  })
+}
+
+
+/**
+  Audit the given URL
+
+  @param {string} url - the url to audit
+*/
+function audit(url) {
+  const options = {
+    chromeFlags: [
+      '--show-paint-rects',
+      '--headless'
+    ],
+    output: 'html'
+  }
+
+  launchChromeAndRunLighthouse(url, options).then(results => {
+    // save the result data in a JSON file
+    save("auditData.json", results)
+  })
+}
+
 // crawl given URL
 crawler.crawl(URL)
 
-// auditing soon:tm:
+// audit given URL
+audit(URL)
