@@ -2,6 +2,7 @@ const lighthouse = require('lighthouse')
 const chromeLauncher = require('chrome-launcher')
 const Crawler = require('easycrawler')
 const fs = require('fs')
+const rimraf = require('rimraf')
 
 // regex to check for a proper URL
 // starts at 2 'cuz "node index" are 0 and 1, respectively
@@ -86,6 +87,14 @@ function saveLastCrawl(urls) {
 }
 
 /**
+  Clears the output folder
+*/
+function clearOutput() {
+  console.log("Clearing output...")
+  rimraf.sync("./output/*")
+}
+
+/**
   Saves a JSON object to the file system
 
   @param {string} filename - the name for the file, extension included
@@ -159,6 +168,9 @@ function audit(url) {
     save("auditData.json", results)
   })
 }
+
+// clear output
+clearOutput()
 
 // crawl given URL
 crawler.crawl(URL)
