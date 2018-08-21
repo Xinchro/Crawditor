@@ -92,7 +92,32 @@ function crawlerFinished(urls) {
   @param {object} urls - the urls object
 */
 function saveLastCrawl(urls) {
+  urls.discovered.forEach((url) => {
+    // sanatize the url for safe directory naming
+    url = sanatizeURL(url)
+    if(!fs.existsSync(`./output/${url}`)){
+      fs.mkdirSync(`./output/${url}`)
+    }
+  })
+
+  // save our crawl data
   save("lastCrawl.json", urls)
+
+  // audit all the discovered urls
+  auditAll(urls.discovered)
+}
+
+/**
+  Sanatizes the url for the filesystem
+
+  @param {string} url - the url to sanatize
+  @return {string} - the sanatized url
+*/
+function sanatizeURL(url) {
+  return url
+    .replace(/\//g, ".")
+    .replace(/\?/g, ".")
+    .replace(/\:/g, ".")
 }
 
 /**
@@ -150,9 +175,8 @@ function launchChromeAndRunLighthouse(url, opts, config = null) {
 
     // run lighthouse
     return lighthouse(url, opts, config).then(results => {
-      // saves the report to a nice HTML file
-      save("audit.html", results.report)
-      return chrome.kill().then(() => results.lhr)
+      // returns report json and html
+      return chrome.kill().then(() => { return { json: results.lhr, html: results.report } })
     })
   })
 }
@@ -174,7 +198,20 @@ function audit(url) {
 
   launchChromeAndRunLighthouse(url, options).then(results => {
     // save the result data in a JSON file
-    save("auditData.json", results)
+    save(`${sanatizeURL(url)}/auditData.json`, results.json)
+    // saves the report to a nice HTML file
+    save(`${sanatizeURL(url)}index.html`, results.html)
+  })
+}
+
+/**
+  Audit all the urls provided.
+
+  @param {array} urls - the urls to audit
+*/
+function auditAll(urls) {
+  urls.forEach((url) => {
+    audit(url)
   })
 }
 
@@ -183,6 +220,3 @@ clearOutput()
 
 // crawl given URL
 crawler.crawl(URL)
-
-// audit given URL
-audit(URL)
