@@ -4,6 +4,12 @@ const Crawler = require('easycrawler')
 const fs = require('fs')
 const rimraf = require('rimraf')
 
+// give up if no URL given
+if(!process.argv[2]) {
+  console.error("Please provide a URL to crawl and audit.")
+  process.exit(1)
+}
+
 // regex to check for a proper URL
 // starts at 2 'cuz "node index" are 0 and 1, respectively
 if(!process.argv[2].match(/(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+/g)) {
@@ -45,6 +51,7 @@ const crawler = new Crawler({
   @param {object} data - the data of the returned document
 */
 function crawlerSuccess(data) {
+  console.log("Crawler finish, continuing.")
   // console.log(data.url) // successful URL
   // console.log(data.body) // successul URL HTML body
 }
@@ -55,6 +62,8 @@ function crawlerSuccess(data) {
   @param {object} data
 */
 function crawlerError(data) {
+  console.error("Crawling error, exiting.")
+  process.exit(1)
   // console.log(data.url) // failed URL
   // console.log(data.status) // failed URL status code
 }
