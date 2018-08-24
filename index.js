@@ -200,7 +200,7 @@ function audit(url) {
     // save the result data in a JSON file
     save(`${sanatizeURL(url)}/auditData.json`, results.json)
     // saves the report to a nice HTML file
-    save(`${sanatizeURL(url)}index.html`, results.html)
+    save(`${sanatizeURL(url)}/index.html`, results.html)
   })
 }
 
