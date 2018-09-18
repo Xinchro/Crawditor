@@ -19,14 +19,14 @@ if(!argv.url.match(/(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$
 }
 const URL = argv.url
 
-let depth = 1
-// 1 to 10
-if(argv.depth && argv.depth.toString().match(/\b(10|[1-9])\b/g)) {
+let depth = 0
+// 0 to 10
+if(argv.depth && argv.depth.toString().match(/\b(10|[0-9])\b/g)) {
   depth = argv.depth
 }
 
-// 1 to 5
 let threads = 5
+// 1 to 5
 if(argv.threads && argv.threads.toString().match(/[1-5]/g)) {
   threads = argv.threads
 }
@@ -84,7 +84,7 @@ function crawlerFinished(urls) {
   }
   // console.log("Crawled URLs:", urls.crawled)
   // console.log("Discovered URLs:", urls.discovered)
-  saveLastCrawl({...urls, timeCreated: new Date()})
+  saveLastCrawl({ ...urls, timeCreated: new Date() })
 }
 
 /**
@@ -235,8 +235,14 @@ function auditAll(urls, index) {
 // clear output
 clearOutput()
 
-// crawl given URL
-crawler.crawl(URL)
+// check if depth is above 0
+if(depth > 0) {
+  // crawl given URL
+  crawler.crawl(URL)
+} else {
+  // crawl only the given url
+  saveLastCrawl({ discovered: [URL], crawled: [URL], timeCreated: new Date() })
+}
 
 /**
   Read all the directories in `./output` synchronously
