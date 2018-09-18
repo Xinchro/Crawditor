@@ -13,5 +13,8 @@
     "easycrawler": "^1.0.1",
     "lighthouse": "^3.0.3",
     "rimraf": "^2.6.2"
+  },
+  "dependencies": {
+    "minimist": "^1.2.0"
   }
 }
