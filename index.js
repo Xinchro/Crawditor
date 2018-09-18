@@ -5,8 +5,6 @@ const fs = require('fs')
 const rimraf = require('rimraf')
 const argv = require('minimist')(process.argv.slice(2))
 
-console.log(argv)
-
 // give up if no URL given
 if(!argv.url) {
   console.error("Please provide a URL to crawl and audit.")
