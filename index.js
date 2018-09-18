@@ -30,7 +30,7 @@ if(process.argv[4] && process.argv[4].match(/[1-5]/g)) {
   threads = process.argv[4]
 }
 
-console.log(`Crawling ${URL}, at a depth of ${depth
+console.info(`Crawling ${URL}, at a depth of ${depth
 }, with ${threads} threads.`)
 
 const crawler = new Crawler({
@@ -38,7 +38,7 @@ const crawler = new Crawler({
     logs: false, // debug logging
     depth: depth, // crawl depth
     headers: {}, // headers to send
-    // onlyCrawl: [], // only URLs containing these strings
+    onlyCrawl: [URL], // only URLs containing these strings
     // reject: [], // no URLs with these strings
     onSuccess: crawlerSuccess,
     onError: crawlerError,
@@ -51,7 +51,7 @@ const crawler = new Crawler({
   @param {object} data - the data of the returned document
 */
 function crawlerSuccess(data) {
-  console.log("Crawler finish, continuing.")
+  console.info("Crawler finish, continuing.")
   // console.log(data.url) // successful URL
   // console.log(data.body) // successul URL HTML body
 }
@@ -92,14 +92,45 @@ function crawlerFinished(urls) {
   @param {object} urls - the urls object
 */
 function saveLastCrawl(urls) {
+  urls.discovered.forEach((url) => {
+    // sanatize the url for safe directory naming
+    url = sanatizeURL(url)
+    if(!fs.existsSync(`./output/${url}`)){
+      fs.mkdirSync(`./output/${url}`)
+    }
+  })
+
+  // save our crawl data
   save("lastCrawl.json", urls)
+
+  // audit all the discovered urls
+  auditAll(urls.discovered, 0)
+
+  makeAuditsIndex()
+}
+
+/**
+  Sanatizes the url for the filesystem
+
+  @param {string} url - the url to sanatize
+  @return {string} - the sanatized url
+*/
+function sanatizeURL(url) {
+  url = url
+    .replace(/\//g, ".")
+    .replace(/\?/g, ".")
+    .replace(/\:/g, ".")
+
+  url = url[url.length-1] !== "." ? url : url.slice(0, url.length-1)
+
+  return url
 }
 
 /**
   Clears the output folder
 */
 function clearOutput() {
-  console.log("Clearing output...")
+  console.info("Clearing output...")
   rimraf.sync("./output/*")
 }
 
@@ -117,7 +148,7 @@ function save(filename, data, callback) {
   // check for callback and use default if no callback exists
   callback = callback ? callback : (err) => {
     if(err) throw err
-    console.log(`Saved file ${filename}!`)
+    console.info(`Saved file ${filename}!`)
   }
 
   // check if data is object
@@ -148,11 +179,12 @@ function launchChromeAndRunLighthouse(url, opts, config = null) {
   return chromeLauncher.launch({chromeFlags: opts.chromeFlags}).then(chrome => {
     opts.port = chrome.port
 
+    console.info(`Auditing ${url}`)
+
     // run lighthouse
     return lighthouse(url, opts, config).then(results => {
-      // saves the report to a nice HTML file
-      save("audit.html", results.report)
-      return chrome.kill().then(() => results.lhr)
+      // returns report json and html
+      return chrome.kill().then(() => { return { json: results.lhr, html: results.report } })
     })
   })
 }
@@ -162,20 +194,41 @@ function launchChromeAndRunLighthouse(url, opts, config = null) {
   Audit the given URL
 
   @param {string} url - the url to audit
+  @retuns {Promise} -
 */
 function audit(url) {
   const options = {
     chromeFlags: [
-      '--show-paint-rects',
-      '--headless'
+      '--show-paint-rects'
     ],
     output: 'html'
   }
 
-  launchChromeAndRunLighthouse(url, options).then(results => {
-    // save the result data in a JSON file
-    save("auditData.json", results)
-  })
+  return launchChromeAndRunLighthouse(url, options)
+}
+
+/**
+  Audit all the urls provided.
+
+  @param {array} urls - the urls to audit
+  @returns {boolean} true
+*/
+function auditAll(urls, index) {
+  // check if we still have a URL to audit
+  if(index < urls.length) {
+    audit(urls[index])
+      .then(results => {
+        // save the result data in a JSON file
+        save(`${sanatizeURL(urls[index])}/auditData.json`, results.json)
+        // saves the report to a nice HTML file
+        save(`${sanatizeURL(urls[index])}/index.html`, results.html)
+        // audit the next one
+        auditAll(urls, index + 1)
+      })
+  } else {
+    console.info("Auditing complete.")
+    return true
+  }
 }
 
 // clear output
@@ -184,5 +237,34 @@ clearOutput()
 // crawl given URL
 crawler.crawl(URL)
 
-// audit given URL
-audit(URL)
+/**
+  Read all the directories in `./output` synchronously
+*/
+function readDirs() {
+  return fs.readdirSync("./output")
+}
+
+/**
+  Make the index file to click through to all the audits done
+*/
+function makeAuditsIndex() {
+  let dirs = ''
+
+  readDirs().forEach((dir) => {
+    dirs += `<li><a href="/${dir}/">${dir}</a></li>`
+  })
+
+  let index = `
+  <html>
+    <head>
+    </head>
+    <body>
+      <ul>
+        ${dirs}
+      </ul>
+    </body>
+  </html>
+  `
+
+  fs.writeFileSync("./output/index.html", index)
+}
