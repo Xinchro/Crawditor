@@ -3,31 +3,34 @@ const chromeLauncher = require('chrome-launcher')
 const Crawler = require('easycrawler')
 const fs = require('fs')
 const rimraf = require('rimraf')
+const argv = require('minimist')(process.argv.slice(2))
+
+console.log(argv)
 
 // give up if no URL given
-if(!process.argv[2]) {
+if(!argv.url) {
   console.error("Please provide a URL to crawl and audit.")
   process.exit(1)
 }
 
 // regex to check for a proper URL
 // starts at 2 'cuz "node index" are 0 and 1, respectively
-if(!process.argv[2].match(/(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+/g)) {
+if(!argv.url.match(/(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+/g)) {
   console.error("Please use a correct URL.")
   process.exit(1)
 }
-const URL = process.argv[2]
+const URL = argv.url
 
 let depth = 1
 // 1 to 10
-if(process.argv[3] && process.argv[3].match(/\b(10|[1-9])\b/g)) {
-  depth = process.argv[3]
+if(argv.depth && argv.depth.toString().match(/\b(10|[1-9])\b/g)) {
+  depth = argv.depth
 }
 
 // 1 to 5
 let threads = 5
-if(process.argv[4] && process.argv[4].match(/[1-5]/g)) {
-  threads = process.argv[4]
+if(argv.threads && argv.threads.toString().match(/[1-5]/g)) {
+  threads = argv.threads
 }
 
 console.info(`Crawling ${URL}, at a depth of ${depth
